@@ -1,10 +1,20 @@
 import streamlit as st
-import keras
+import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-model = keras.models.load_model("rice_model.keras")
 
+# -----------------------------
+# Load Model
+# -----------------------------
+
+model = tf.keras.models.load_model(
+    "rice_model.keras",
+    compile=False
+)
+
+
+# Classes
 classes = [
     "Arborio",
     "Basmati",
@@ -13,31 +23,93 @@ classes = [
     "Karacadag"
 ]
 
-st.title("🌾 Rice Classification")
 
-file = st.file_uploader(
-    "Upload rice image",
-    type=["jpg","png","jpeg"]
+# -----------------------------
+# UI
+# -----------------------------
+
+st.title("🌾 Rice Image Classification")
+
+st.write(
+    "Upload a rice grain image"
 )
 
-if file:
 
-    img = Image.open(file).convert("RGB")
+uploaded_file = st.file_uploader(
+    "Choose Image",
+    type=[
+        "jpg",
+        "jpeg",
+        "png"
+    ]
+)
 
-    st.image(img)
 
-    img = img.resize((224,224))
+# -----------------------------
+# Prediction
+# -----------------------------
 
-    img = np.array(img)
+if uploaded_file is not None:
 
-    img = np.expand_dims(img,0)
+    try:
 
-    pred = model.predict(img)[0]
+        image = Image.open(
+            uploaded_file
+        ).convert("RGB")
 
-    result = classes[np.argmax(pred)]
 
-    confidence = np.max(pred)
+        st.image(
+            image,
+            caption="Uploaded Image",
+            use_container_width=True
+        )
 
-    st.success(f"Rice Type: {result}")
 
-    st.write(f"Confidence: {confidence*100:.2f}%")
+        image = image.resize(
+            (224,224)
+        )
+
+
+        img_array = np.array(
+            image
+        )
+
+
+        img_array = np.expand_dims(
+            img_array,
+            axis=0
+        )
+
+
+        prediction = model.predict(
+            img_array
+        )
+
+
+        index = np.argmax(
+            prediction
+        )
+
+
+        confidence = np.max(
+            prediction
+        )
+
+
+        st.success(
+            f"🌾 Rice Type: {classes[index]}"
+        )
+
+
+        st.write(
+            f"Confidence: {confidence*100:.2f}%"
+        )
+
+
+    except Exception as e:
+
+        st.error(
+            "Prediction failed"
+        )
+
+        st.write(e)
